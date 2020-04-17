@@ -1,7 +1,7 @@
 {
-  "name": "Splatoon2DiscordBot",
+  "name": "splatoon-2-discord-bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "A Splatoon 2 bot for Discord ",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,9 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.2",
-    "discord.js": "^11.3.2",
+    "discord.js": "^12.1.1",
     "lowdb": "^1.0.0",
-    "request": "^2.87.0"
+    "request": "^2.88.2"
   }
 }
