@@ -86,6 +86,10 @@ function weaponsToString(weapons)
         }
         else if(value.hasOwnProperty('coop_special_weapon'))
         {
+            if(value['coop_special_weapon']['name'] === 'Random')
+            {
+                return '**Random**';
+            }
             return value['coop_special_weapon']['name'];
         }
         else
@@ -108,10 +112,10 @@ function sendSalmonRunData(data)
         .setColor('F57A37')
         .addField('Current Stage', now['stage']['name'], true)
         .addField('Current Weapons', weaponsToString(now['weapons']), true)
-        .addField('Current Ends In', salmonRunLibrary.getCurrentEndString(), true)
+        .addField('Current Shift Ends In', salmonRunLibrary.getCurrentEndString(), true)
         .addField('Future Stage', future['stage']['name'], true)
         .addField('Future Weapons', weaponsToString(future['weapons']), true)
-        .addField('Future Starts In', salmonRunLibrary.getFutureStartString(), true)
+        .addField('Future Shift Starts In', salmonRunLibrary.getFutureStartString(), true)
     sendToAllServers([embed]);
 }
 
