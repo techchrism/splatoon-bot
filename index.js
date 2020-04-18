@@ -55,10 +55,8 @@ function sendToAllServers(data)
     let mapChannels = db.get('mapChannels').value();
     for(let ch of mapChannels)
     {
-        if(client.channels.has(ch))
+        client.channels.fetch(ch).then(channel =>
         {
-            let channel = client.channels.get(ch);
-            
             // Make sure it's a text-based channel (instead of a voice or category)
             if(['text', 'dm', 'group'].indexOf(channel.type) !== -1)
             {
@@ -67,7 +65,12 @@ function sendToAllServers(data)
                     channel.send(msg).catch(logger.error);
                 }
             }
-        }
+        }).catch(err =>
+        {
+            logger.error('Error when sending to channel ' + ch);
+            logger.error(err);
+            db.get('mapChannels').pull(ch).write();
+        })
     }
 }
 
