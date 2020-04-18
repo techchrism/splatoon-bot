@@ -19,17 +19,17 @@ class MapsLibrary extends events.EventEmitter
             this.data = JSON.parse(body);
             
             let refreshAt = this.data['regular'][0]['end_time'] * 1000;
-            let refreshIn = refreshAt -  Date.now();
+            let refreshIn = refreshAt - Date.now();
             this.refreshIn = refreshIn;
             this.logger.info('Refreshing in ' + Math.ceil(refreshIn / 1000) + ' seconds!');
             
             if(refreshIn <= 0)
             {
-                // If the data hasn't reloaded yet, wait 5 more seconds before retrying
+                // If the data hasn't reloaded yet, wait 10 more seconds before retrying
                 setTimeout(() =>
                 {
                     this.load();
-                }, 5000);
+                }, 10000);
             }
             else
             {
@@ -38,7 +38,7 @@ class MapsLibrary extends events.EventEmitter
                 setTimeout(() =>
                 {
                     this.load();
-                }, refreshIn);
+                }, refreshIn + 15000); // Add 15 seconds for the api to catch up
             }
         });
     }
@@ -46,11 +46,7 @@ class MapsLibrary extends events.EventEmitter
     getRefreshInSimple()
     {
         let hours = Math.ceil(this.refreshIn / (1000 * 60 * 60));
-        let minutes = Math.ceil(this.refreshIn - (hours * 1000 * 60 * 60) / 1000 * 60);
-        if(minutes >= 60)
-        {
-            minutes = 0;
-        }
+        let minutes = Math.ceil(this.refreshIn - (hours * 1000 * 60 * 60) / 1000 * 60) % 60;
         
         return {
             hours: hours,

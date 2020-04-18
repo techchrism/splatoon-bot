@@ -5,6 +5,7 @@ const FileSync = require('lowdb/adapters/FileSync');
 const WeaponsLibrary = require('./src/WeaponsLibrary');
 const MapsLibrary = require('./src/MapsLibrary');
 const StagesLibrary = require('./src/StagesLibrary');
+const SalmonRunLibrary = require('./src/SalmonRunLibrary');
 const {createLogger, format, transports} = require('winston');
 const {combine, timestamp, label, prettyPrint, printf} = format;
 require('winston-daily-rotate-file');
@@ -37,6 +38,7 @@ const db = low(adapter);
 const weaponsLibrary = new WeaponsLibrary(db, logger);
 const stagesLibrary = new StagesLibrary(db, logger);
 const mapsLibrary = new MapsLibrary(logger);
+const salmonRunLibrary = new SalmonRunLibrary(logger);
 let token = JSON.parse(fs.readFileSync('settings.json'))['token'];
 let client = new Discord.Client();
 
@@ -72,6 +74,45 @@ function sendToAllServers(data)
             db.get('mapChannels').pull(ch).write();
         })
     }
+}
+
+function weaponsToString(weapons)
+{
+    return weapons.map(value =>
+    {
+        if(value.hasOwnProperty('weapon'))
+        {
+            return value['weapon']['name'];
+        }
+        else if(value.hasOwnProperty('coop_special_weapon'))
+        {
+            return value['coop_special_weapon']['name'];
+        }
+        else
+        {
+            logger.warn('Unknown weapon data: ' + JSON.stringify(value));
+            return 'Unknown';
+        }
+    }).join(', ');
+}
+
+function sendSalmonRunData(data)
+{
+    logger.info("Sending salmon run data");
+    
+    let now = data['details'][0];
+    const future = data['details'][1];
+    let embed = new Discord.MessageEmbed()
+        .setTitle('__Salmon Run Schedules__')
+        .setThumbnail('https://i.imgur.com/Zq1HaCO.png')
+        .setColor('F57A37')
+        .addField('Current Stage', now['stage']['name'], true)
+        .addField('Current Weapons', weaponsToString(now['weapons']), true)
+        .addField('Current Ends In', salmonRunLibrary.getCurrentEndString(), true)
+        .addField('Future Stage', future['stage']['name'], true)
+        .addField('Future Weapons', weaponsToString(future['weapons']), true)
+        .addField('Future Starts In', salmonRunLibrary.getFutureStartString(), true)
+    sendToAllServers([embed]);
 }
 
 function sendMapData(data)
@@ -147,7 +188,7 @@ function sendMapData(data)
     let timeText = timeUntil.hours + ' Hour' + (timeUntil.hours > 1 ? 's' : '');
     if(timeUntil.minutes !== 0)
     {
-        timeText += ', ' + timeUntil.minutes + ' minute' + (timeUntil.minutes > 1 ? 's' : '');
+        timeText += ', ' + timeUntil.minutes + ' Minute' + (timeUntil.minutes > 1 ? 's' : '');
     }
     let embed = new Discord.MessageEmbed()
         .setTitle('Refresh in ' + timeText);
@@ -169,10 +210,17 @@ client.on('ready', () =>
     // Start the timer to send the messages
     mapsLibrary.on('data', (data) =>
     {
-        logger.info('Got data');
+        logger.info('Got map data');
         sendMapData(data);
     });
     mapsLibrary.load();
+    
+    salmonRunLibrary.on('data', (data) =>
+    {
+        logger.info('Got salmon run data');
+        sendSalmonRunData(data);
+    });
+    salmonRunLibrary.load();
 });
 
 client.on('message', (message) =>
