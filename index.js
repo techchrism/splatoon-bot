@@ -13,7 +13,7 @@ require('winston-daily-rotate-file');
 // Begin logging
 const fileTransport = new (transports.DailyRotateFile)({
     filename: '%DATE%.log',
-    datePattern: 'YYYY-MM-DD-HH',
+    datePattern: 'YYYY-MM-DD',
     zippedArchive: true,
     dirname: 'logs'
 });
@@ -381,8 +381,16 @@ client.on('message', (message) =>
     }
 });
 
-client.login(token).then(r => logger.info("Logged in successfully")).catch(e =>
+client.login(token).then(r => logger.info('Logged in successfully')).catch(e =>
 {
-    logger.error("Error logging in");
+    logger.error('Error logging in');
     logger.error(e);
+});
+client.on('shardError', error =>
+{
+    logger.error('Websocket error', error);
+});
+process.on('unhandledRejection', error =>
+{
+    logger.error('Unhandled promise rejection:', error);
 });
