@@ -11,6 +11,7 @@ class WeaponsLibrary
             weapons: {}
         }).write();
         this.lastUpdated = null;
+        this.cachedWeaponsList = [];
     }
     
     forceUpdate(callback)
@@ -22,8 +23,28 @@ class WeaponsLibrary
             vm.runInContext(body, sandbox);
             
             this.db.set('weapons', sandbox['weaponlist']).write();
+    
+            let weaponsList = '';
+            this.cachedWeaponsList = [];
+            for(let i = 0; i < sandbox['weaponlist']['weapons'].length; i++)
+            {
+                if(weaponsList.length > 1024)
+                {
+                    this.cachedWeaponsList.push(weaponsList);
+                    weaponsList = '';
+                }
+                weaponsList += sandbox['weaponlist']['weapons'][i].name;
+                if(i !== sandbox['weaponlist']['weapons'].length - 1)
+                {
+                    weaponsList += ', ';
+                }
+            }
+            this.cachedWeaponsList.push(weaponsList);
             
-            callback(null, sandbox['weaponlist']);
+            callback(null, {
+                weapons: sandbox['weaponlist'],
+                cachedWeaponsList: this.cachedWeaponsList
+            });
         });
     }
     
@@ -40,7 +61,10 @@ class WeaponsLibrary
         }
         else
         {
-            callback(null, this.db.get('weapons').value());
+            callback(null, {
+                weapons: this.db.get('weapons').value(),
+                cachedWeaponsList: this.cachedWeaponsList
+            });
         }
     }
     

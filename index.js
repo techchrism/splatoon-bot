@@ -182,24 +182,16 @@ client.on('message', (message) =>
         logger.info(`Sending weapons to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
         weaponsLibrary.getWeapons((err, data) =>
         {
-            let weaponsList = '';
-            for(let i = 0; i < data['weapons'].length; i++)
+            let page = 1;
+            for(let weapons of data.cachedWeaponsList)
             {
-                weaponsList += data['weapons'][i].name;
-                if(i !== data['weapons'].length - 1)
-                {
-                    weaponsList += ', ';
-                }
-            }
-            logger.info(weaponsList);
-            logger.info(`Weapons list is ${data['weapons'].length} long`);
-            
-            let weaponsEmbed = new Discord.MessageEmbed()
+                let weaponsEmbed = new Discord.MessageEmbed()
                 .setColor(5504768)
-                .setTitle('All Splatoon 2 Weapons:')
-                .setDescription(weaponsList);
-
-            message.channel.send(weaponsEmbed).catch(logger.error);
+                 .setTitle('All Splatoon 2 Weapons (Page ' + page + ")")
+                 .setDescription(weapons);
+                message.channel.send(weaponsEmbed).catch(logger.error);
+                page++;
+            }
         });
     }
     
@@ -284,7 +276,7 @@ client.on('message', (message) =>
         logger.info(`Sending random weapon to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
         weaponsLibrary.getWeapons((err, data) =>
         {
-            let weapons = data['weapons'];
+            let weapons = data['weapons']['weapons'];
             
             let randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
             message.reply('Your weapon is the **' + randomWeapon.name + '**');
