@@ -12,7 +12,16 @@ class StagesLibrary
             stages: {}
         }).write();
         this.lastUpdated = null;
-        this.manuallyAdded = JSON.parse(fs.readFileSync('manually-added.json'))['custom'];
+        let manualData = '';
+        try
+        {
+            manualData = fs.readFileSync('manually-added.json');
+        }
+        catch(err)
+        {
+            this.logger.warn('No manually-added.json file');
+        }
+        this.manuallyAdded = manualData === '' ? [] : JSON.parse(manualData)['custom'];
     }
     
     forceUpdate(callback)

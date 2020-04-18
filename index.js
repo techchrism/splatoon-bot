@@ -39,7 +39,18 @@ const weaponsLibrary = new WeaponsLibrary(db, logger);
 const stagesLibrary = new StagesLibrary(db, logger);
 const mapsLibrary = new MapsLibrary(logger);
 const salmonRunLibrary = new SalmonRunLibrary(logger);
-let token = JSON.parse(fs.readFileSync('settings.json'))['token'];
+
+let token = '';
+try
+{
+    token = JSON.parse(fs.readFileSync('settings.json').toString())['token'];
+}
+catch(e)
+{
+    logger.error('Error loading settings.json');
+    logger.error(e);
+    return;
+}
 let client = new Discord.Client();
 
 const stageKeys = {
