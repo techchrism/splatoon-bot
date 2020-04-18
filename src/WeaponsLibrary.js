@@ -3,9 +3,10 @@ const request = require('request');
 
 class WeaponsLibrary
 {
-    constructor(db)
+    constructor(db, logger)
     {
         this.db = db;
+        this.logger = logger;
         this.db.defaults({
             weapons: {}
         }).write();
@@ -33,6 +34,7 @@ class WeaponsLibrary
         // Reload weapons if it's been more than a day
         if(this.lastUpdated === null || (this.lastUpdated - now) >= 1000 * 60 * 60 * 24)
         {
+            this.logger.info("Reloading weapons");
             this.lastUpdated = now;
             this.forceUpdate(callback);
         }

@@ -3,10 +3,11 @@ const request = require('request');
 
 class MapsLibrary extends events.EventEmitter
 {
-    constructor()
+    constructor(logger)
     {
         super();
         
+        this.logger = logger;
         this.data = {};
         this.refreshIn = 0;
     }
@@ -20,7 +21,7 @@ class MapsLibrary extends events.EventEmitter
             let refreshAt = this.data['regular'][0]['end_time'] * 1000;
             let refreshIn = refreshAt -  Date.now();
             this.refreshIn = refreshIn;
-            console.log('Refreshing in ' + Math.ceil(refreshIn / 1000) + ' seconds!');
+            this.logger.info('Refreshing in ' + Math.ceil(refreshIn / 1000) + ' seconds!');
             
             if(refreshIn <= 0)
             {

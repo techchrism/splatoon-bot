@@ -1,25 +1,24 @@
 const fs = require('fs');
-const {createLogger, format, transports} = require('winston');
-const {combine, timestamp, label, prettyPrint, printf} = format;
-require('winston-daily-rotate-file');
 const Discord = require('discord.js');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
 const WeaponsLibrary = require('./src/WeaponsLibrary');
 const MapsLibrary = require('./src/MapsLibrary');
 const StagesLibrary = require('./src/StagesLibrary');
+const {createLogger, format, transports} = require('winston');
+const {combine, timestamp, label, prettyPrint, printf} = format;
+require('winston-daily-rotate-file');
 
+// Begin logging
 const fileTransport = new (transports.DailyRotateFile)({
     filename: '%DATE%.log',
     datePattern: 'YYYY-MM-DD-HH',
     zippedArchive: true,
     dirname: 'logs'
 });
-
 const myFormat = printf(({ level, message, timestamp }) => {
     return `${timestamp} [${level}]: ${message}`;
 });
-
 const logger = createLogger({
     format: combine(
         timestamp(),
@@ -40,6 +39,16 @@ const stagesLibrary = new StagesLibrary(db);
 const mapsLibrary = new MapsLibrary();
 let token = JSON.parse(fs.readFileSync('settings.json'))['token'];
 let client = new Discord.Client();
+
+const stageKeys = {
+    reg: 'stages',
+    regular: 'stages',
+    splat: 'stages_splatfest',
+    splatfest: 'stages_splatfest',
+    salmon: 'stages_salmonrun',
+    salmonrun: 'stages_salmonrun',
+    station: 'stages_station'
+};
 
 function sendToAllServers(data)
 {
@@ -64,6 +73,7 @@ function sendToAllServers(data)
 
 function sendMapData(data)
 {
+    logger.info("Sending map data");
     let send = [];
     
     // Define the data we want to display
@@ -94,8 +104,10 @@ function sendMapData(data)
     // Loop over the data we want to display
     for(let scrape of scrapeInfo)
     {
-        let embed = new Discord.RichEmbed();
-        embed.setTitle(scrape.title);
+        let embed = new Discord.MessageEmbed()
+            .setTitle(scrape.title)
+            .setThumbnail(scrape.thumbnail)
+            .setColor(scrape.color);
         
         // Add current data
         let now = data[scrape.key][0];
@@ -124,9 +136,6 @@ function sendMapData(data)
             embed.addField("\u200C", "\u200C", true);
         }
         
-        embed.setThumbnail(scrape.thumbnail);
-        embed.setColor(scrape.color);
-        
         send.push(embed);
     }
     
@@ -153,12 +162,12 @@ db.defaults({
 // Calls when logged into discord
 client.on('ready', () =>
 {
-    console.log('Logged in as "' + client.user.tag + '"');
+    logger.info('Logged in as "' + client.user.tag + '"');
     
     // Start the timer to send the messages
     mapsLibrary.on('data', (data) =>
     {
-        console.log('Got data!');
+        logger.info('Got data');
         sendMapData(data);
     });
     mapsLibrary.load();
@@ -169,12 +178,9 @@ client.on('message', (message) =>
     if(message.content === '!weapons')
     {
         // Send a list of weapons
+        logger.info("Sending weapons");
         weaponsLibrary.getWeapons((err, data) =>
         {
-            let weaponsEmbed = new Discord.RichEmbed();
-            weaponsEmbed.title = 'All Splatoon 2 Weapons:';
-            weaponsEmbed.color = 5504768;
-    
             let weaponsList = '';
             for(let i = 0; i < data['weapons'].length; i++)
             {
@@ -184,7 +190,11 @@ client.on('message', (message) =>
                     weaponsList += ', ';
                 }
             }
-            weaponsEmbed.setDescription(weaponsList);
+            
+            let weaponsEmbed = new Discord.MessageEmbed()
+                .setColor(5504768)
+                .setTitle('All Splatoon 2 Weapons:')
+                .setDescription(weaponsList);
 
             message.channel.send(weaponsEmbed);
         });
@@ -193,11 +203,12 @@ client.on('message', (message) =>
     if(message.content === '!stages')
     {
         // Send a list of stages
+        logger.info("Sending stages");
         stagesLibrary.getStages((err, data) =>
         {
-            let stagesEmbed = new Discord.RichEmbed();
-            stagesEmbed.title = 'All Splatoon 2 Stages:';
-            stagesEmbed.color = 5504768;
+            let stagesEmbed = new Discord.MessageEmbed()
+                .setTitle('All Splatoon 2 Stages:')
+                .setColor(5504768);
             
             let scrapeData = [
                 {
@@ -239,56 +250,16 @@ client.on('message', (message) =>
     
     if(message.content.startsWith('!randomstage'))
     {
+        logger.info("Sending random stage");
         // Get a random stage
         let key = 'stages';
         if(message.content.length > 13)
         {
             let arg = message.content.substring(13);
-            switch(arg)
-            {
-                case 'reg':
-                {
-                    key = 'stages';
-                    break;
-                }
-                case 'regular':
-                {
-                    key = 'stages';
-                    break;
-                }
-                case 'splat':
-                {
-                    key = 'stages_splatfest';
-                    break;
-                }
-                case 'splatfest':
-                {
-                    key = 'stages_splatfest';
-                    break;
-                }
-                case 'salmon':
-                {
-                    key = 'stages_salmonrun';
-                    break;
-                }
-                case 'salmonrun':
-                {
-                    key = 'stages_salmonrun';
-                    break;
-                }
-                case 'station':
-                {
-                    key = 'stages_station';
-                    break;
-                }
-                default:
-                {
-                    key = null;
-                }
-            }
+            key = stageKeys.hasOwnProperty(arg) ? stageKeys[arg] : null;
         }
         
-        if(key === null)
+        if(key == null)
         {
             message.reply('Invalid category. Options are: reg, regular, splat, splatfest, salmon, salmonrun, and station');
             return;
@@ -307,6 +278,7 @@ client.on('message', (message) =>
     
     if(message.content === '!randomweapon')
     {
+        logger.info("Sending random weapon");
         weaponsLibrary.getWeapons((err, data) =>
         {
             let weapons = data['weapons'];
@@ -323,6 +295,7 @@ client.on('message', (message) =>
         {
             if(message.guild.owner.id !== message.member.id)
             {
+                logger.info(`Toggle maps refused for ${message.member.name} (${message.member.id})`);
                 message.reply('Sorry, you must be the owner of this server to do that!');
                 return;
             }
@@ -330,14 +303,17 @@ client.on('message', (message) =>
         
         if(db.get('mapChannels').value().indexOf(message.channel.id) === -1)
         {
+            logger.info("Added map updates to " + message.channel.name + " (" + message.channel.id + ")");
             db.get('mapChannels').push(message.channel.id).write();
             message.reply('Added map updates to this channel!');
         }
         else
         {
+            logger.info("Removed map updates from " + message.channel.name + " (" + message.channel.id + ")");
             db.get('mapChannels').pull(message.channel.id).write();
             message.reply('Removed map updates to this channel!');
         }
+        logger.info(`{On ${message.guild.name} (${message.guild.id})}`);
     }
     
     if(message.content === '!help')
@@ -361,4 +337,8 @@ client.on('message', (message) =>
     }
 });
 
-client.login(token);
+client.login(token).then(r => logger.info("Logged in")).catch(e =>
+{
+    logger.error("Error logging in");
+    logger.error(e);
+});
