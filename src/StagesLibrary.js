@@ -43,7 +43,7 @@ class StagesLibrary
         // Reload weapons if it's been more than a day
         if(this.lastUpdated === null || (this.lastUpdated - now) >= 1000 * 60 * 60 * 24)
         {
-            logger.info("Reloading stages");
+            this.logger.info("Reloading stages");
             this.lastUpdated = now;
             this.forceUpdate(callback);
         }
