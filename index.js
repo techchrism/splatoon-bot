@@ -34,9 +34,9 @@ logger.info("Started logging");
 
 const adapter = new FileSync('db.json');
 const db = low(adapter);
-const weaponsLibrary = new WeaponsLibrary(db);
-const stagesLibrary = new StagesLibrary(db);
-const mapsLibrary = new MapsLibrary();
+const weaponsLibrary = new WeaponsLibrary(db, logger);
+const stagesLibrary = new StagesLibrary(db, logger);
+const mapsLibrary = new MapsLibrary(logger);
 let token = JSON.parse(fs.readFileSync('settings.json'))['token'];
 let client = new Discord.Client();
 
@@ -64,7 +64,7 @@ function sendToAllServers(data)
             {
                 for(let msg of data)
                 {
-                    channel.send(msg);
+                    channel.send(msg).catch(logger.error);
                 }
             }
         }
@@ -140,15 +140,16 @@ function sendMapData(data)
     }
     
     // Add a message for the time until refresh
-    let embed = new Discord.RichEmbed();
-    embed.setTitle('Refresh In');
     let timeUntil = mapsLibrary.getRefreshInSimple();
     let timeText = timeUntil.hours + ' hours';
     if(timeUntil.minutes !== 0)
     {
         timeText += ', ' + timeUntil.minutes + ' minutes';
     }
-    embed.setDescription(timeText);
+    let embed = new Discord.MessageEmbed()
+        .setTitle('Refresh In')
+        .setDescription(timeText);
+    
     send.push(embed);
     
     // Send this data to all servers with the update toggled
@@ -178,7 +179,7 @@ client.on('message', (message) =>
     if(message.content === '!weapons')
     {
         // Send a list of weapons
-        logger.info("Sending weapons");
+        logger.info(`Sending weapons to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
         weaponsLibrary.getWeapons((err, data) =>
         {
             let weaponsList = '';
@@ -190,20 +191,22 @@ client.on('message', (message) =>
                     weaponsList += ', ';
                 }
             }
+            logger.info(weaponsList);
+            logger.info(`Weapons list is ${data['weapons'].length} long`);
             
             let weaponsEmbed = new Discord.MessageEmbed()
                 .setColor(5504768)
                 .setTitle('All Splatoon 2 Weapons:')
                 .setDescription(weaponsList);
 
-            message.channel.send(weaponsEmbed);
+            message.channel.send(weaponsEmbed).catch(logger.error);
         });
     }
     
     if(message.content === '!stages')
     {
         // Send a list of stages
-        logger.info("Sending stages");
+        logger.info(`Sending stages to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
         stagesLibrary.getStages((err, data) =>
         {
             let stagesEmbed = new Discord.MessageEmbed()
@@ -244,13 +247,13 @@ client.on('message', (message) =>
                 stagesEmbed.addField(scrape.name, stagesList);
             }
             
-            message.channel.send(stagesEmbed);
+            message.channel.send(stagesEmbed).catch(logger.error);
         });
     }
     
     if(message.content.startsWith('!randomstage'))
     {
-        logger.info("Sending random stage");
+        logger.info(`Sending random stage to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
         // Get a random stage
         let key = 'stages';
         if(message.content.length > 13)
@@ -278,7 +281,7 @@ client.on('message', (message) =>
     
     if(message.content === '!randomweapon')
     {
-        logger.info("Sending random weapon");
+        logger.info(`Sending random weapon to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
         weaponsLibrary.getWeapons((err, data) =>
         {
             let weapons = data['weapons'];
@@ -295,7 +298,7 @@ client.on('message', (message) =>
         {
             if(message.guild.owner.id !== message.member.id)
             {
-                logger.info(`Toggle maps refused for ${message.member.name} (${message.member.id})`);
+                logger.info(`Toggle maps refused for ${message.member.user.username} (${message.member.id})`);
                 message.reply('Sorry, you must be the owner of this server to do that!');
                 return;
             }
@@ -333,11 +336,11 @@ client.on('message', (message) =>
             '',
             '__!randomstage__ [category] - Gets a random stage from the specified category. Options are reg, regular, splat, splatfest, salmon, salmonrun, and station. Defaults to regular.'
         ];
-        message.channel.send(msgData.join("\n"));
+        message.channel.send(msgData.join("\n")).catch(logger.error);
     }
 });
 
-client.login(token).then(r => logger.info("Logged in")).catch(e =>
+client.login(token).then(r => logger.info("Logged in successfully")).catch(e =>
 {
     logger.error("Error logging in");
     logger.error(e);
