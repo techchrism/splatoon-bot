@@ -144,15 +144,13 @@ function sendMapData(data)
     
     // Add a message for the time until refresh
     let timeUntil = mapsLibrary.getRefreshInSimple();
-    let timeText = timeUntil.hours + ' hours';
+    let timeText = timeUntil.hours + ' Hour' + (timeUntil.hours > 1 ? 's' : '');
     if(timeUntil.minutes !== 0)
     {
-        timeText += ', ' + timeUntil.minutes + ' minutes';
+        timeText += ', ' + timeUntil.minutes + ' minute' + (timeUntil.minutes > 1 ? 's' : '');
     }
     let embed = new Discord.MessageEmbed()
-        .setTitle('Refresh In')
-        .setDescription(timeText);
-    
+        .setTitle('Refresh in ' + timeText);
     send.push(embed);
     
     // Send this data to all servers with the update toggled
