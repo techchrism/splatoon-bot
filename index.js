@@ -230,7 +230,7 @@ client.on('ready', () =>
 
 client.on('message', (message) =>
 {
-    if(message.content === '!weapons')
+    if(message.content === `${config.prefix}weapons`)
     {
         // Send a list of weapons
         logger.info(`Sending weapons to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
@@ -249,7 +249,7 @@ client.on('message', (message) =>
         });
     }
 
-    if(message.content === '!stages')
+    if(message.content === `${config.prefix}stages`)
     {
         // Send a list of stages
         logger.info(`Sending stages to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
@@ -297,7 +297,7 @@ client.on('message', (message) =>
         });
     }
 
-    if(message.content.startsWith('!randomstage'))
+    if(message.content.startsWith(`${config.prefix}randomstage`))
     {
         logger.info(`Sending random stage to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
         // Get a random stage
@@ -325,7 +325,7 @@ client.on('message', (message) =>
         }
     }
 
-    if(message.content === '!randomweapon')
+    if(message.content === `${config.prefix}randomweapon`)
     {
         logger.info(`Sending random weapon to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
         weaponsLibrary.getWeapons((err, data) =>
@@ -337,7 +337,7 @@ client.on('message', (message) =>
         });
     }
 
-    if(message.content === '!togglemaps')
+    if(message.content === `${config.prefix}togglemaps`)
     {
         // Make sure that if this is a server, only allow the owner to modify this
         if(message.channel.type === 'text')
@@ -365,7 +365,7 @@ client.on('message', (message) =>
         logger.info(`{On ${message.guild.name} (${message.guild.id})}`);
     }
 
-    if(message.content === '!help')
+    if(message.content === `${config.prefix}help`)
     {
         let msgData = [
             '**Command Usage:**',
