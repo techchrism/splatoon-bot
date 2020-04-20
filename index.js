@@ -370,17 +370,17 @@ client.on('message', (message) =>
         let msgData = [
             '**Command Usage:**',
             '',
-            '__!help__ - Show help',
+            `**${config.prefix}help** - Show help`,
             '',
-            '__!togglemaps__ - Toggle the automatic updates of maps in this channel',
+            `**${config.prefix}togglemaps** - Toggle the automatic updates of maps in this channel`,
             '',
-            '__!weapons__ - List all Splatoon 2 weapons',
+            `**${config.prefix}weapons** - List all Splatoon 2 weapons`,
             '',
-            '__!randomweapon__ - Get a random weapon',
+            `**${config.prefix}randomweapon** - Get a random weapon`,
             '',
-            '__!stages__ - List all Splatoon 2 stages',
+            `**${config.prefix}stages** - List all Splatoon 2 stages`,
             '',
-            '__!randomstage__ [category] - Gets a random stage from the specified category. Options are reg, regular, splat, splatfest, salmon, salmonrun, and station. Defaults to regular.'
+            `**${config.prefix}randomstage** [category] - Gets a random stage from the specified category. Options are reg, regular, splat, splatfest, salmon, salmonrun, and station. Defaults to regular.`
         ];
         message.channel.send(msgData.join("\n")).catch(logger.error);
     }
