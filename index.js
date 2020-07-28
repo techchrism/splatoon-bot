@@ -8,6 +8,7 @@ const StagesLibrary = require('./src/StagesLibrary');
 const SalmonRunLibrary = require('./src/SalmonRunLibrary');
 const {createLogger, format, transports} = require('winston');
 const {combine, timestamp, label, prettyPrint, printf} = format;
+const config = require("./config.json");
 require('winston-daily-rotate-file');
 
 // Begin logging
@@ -40,17 +41,6 @@ const stagesLibrary = new StagesLibrary(db, logger);
 const mapsLibrary = new MapsLibrary(logger);
 const salmonRunLibrary = new SalmonRunLibrary(logger);
 
-let token = '';
-try
-{
-    token = JSON.parse(fs.readFileSync('settings.json').toString())['token'];
-}
-catch(e)
-{
-    logger.error('Error loading settings.json');
-    logger.error(e);
-    return;
-}
 let client = new Discord.Client();
 
 const stageKeys = {
@@ -114,7 +104,7 @@ function weaponsToString(weapons)
 function sendSalmonRunData(data)
 {
     logger.info("Sending salmon run data");
-    
+
     let now = data['details'][0];
     const future = data['details'][1];
     let embed = new Discord.MessageEmbed()
@@ -134,7 +124,7 @@ function sendMapData(data)
 {
     logger.info("Sending map data");
     let send = [];
-    
+
     // Define the data we want to display
     let scrapeInfo = [
         {
@@ -159,7 +149,7 @@ function sendMapData(data)
             color: 'CDDC39'
         }
     ];
-    
+
     // Loop over the data we want to display
     for(let scrape of scrapeInfo)
     {
@@ -167,7 +157,7 @@ function sendMapData(data)
             .setTitle(scrape.title)
             .setThumbnail(scrape.thumbnail)
             .setColor(scrape.color);
-        
+
         // Add current data
         let now = data[scrape.key][0];
         if(scrape.show_game_mode)
@@ -179,10 +169,10 @@ function sendMapData(data)
         {
             embed.addField("\u200C", "\u200C", true);
         }
-        
+
         // Add blank space
         embed.addField("\u200C", "\u200C");
-        
+
         // Add next data
         let next = data[scrape.key][1];
         if(scrape.show_game_mode)
@@ -194,10 +184,10 @@ function sendMapData(data)
         {
             embed.addField("\u200C", "\u200C", true);
         }
-        
+
         send.push(embed);
     }
-    
+
     // Add a message for the time until refresh
     let timeUntil = mapsLibrary.getRefreshInSimple();
     let timeText = timeUntil.hours + ' Hour' + (timeUntil.hours > 1 ? 's' : '');
@@ -208,7 +198,7 @@ function sendMapData(data)
     let embed = new Discord.MessageEmbed()
         .setTitle('Refresh in ' + timeText);
     send.push(embed);
-    
+
     // Send this data to all servers with the update toggled
     sendToAllServers(send);
 }
@@ -221,7 +211,7 @@ db.defaults({
 client.on('ready', () =>
 {
     logger.info('Logged in as "' + client.user.tag + '"');
-    
+
     // Start the timer to send the messages
     mapsLibrary.on('data', (data) =>
     {
@@ -229,7 +219,7 @@ client.on('ready', () =>
         sendMapData(data);
     });
     mapsLibrary.load();
-    
+
     salmonRunLibrary.on('data', (data) =>
     {
         logger.info('Got salmon run data');
@@ -240,7 +230,7 @@ client.on('ready', () =>
 
 client.on('message', (message) =>
 {
-    if(message.content === '!weapons')
+    if(message.content === `${config.prefix}weapons`)
     {
         // Send a list of weapons
         logger.info(`Sending weapons to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
@@ -258,8 +248,8 @@ client.on('message', (message) =>
             }
         });
     }
-    
-    if(message.content === '!stages')
+
+    if(message.content === `${config.prefix}stages`)
     {
         // Send a list of stages
         logger.info(`Sending stages to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
@@ -268,7 +258,7 @@ client.on('message', (message) =>
             let stagesEmbed = new Discord.MessageEmbed()
                 .setTitle('All Splatoon 2 Stages:')
                 .setColor(5504768);
-            
+
             let scrapeData = [
                 {
                     name: 'Regular Stages',
@@ -287,7 +277,7 @@ client.on('message', (message) =>
                     key: 'stages_station'
                 }
             ];
-            
+
             // Format the data by category (defined in scrapeData)
             for(let scrape of scrapeData)
             {
@@ -302,12 +292,12 @@ client.on('message', (message) =>
                 }
                 stagesEmbed.addField(scrape.name, stagesList);
             }
-            
+
             message.channel.send(stagesEmbed).catch(logger.error);
         });
     }
-    
-    if(message.content.startsWith('!randomstage'))
+
+    if(message.content.startsWith(`${config.prefix}randomstage`))
     {
         logger.info(`Sending random stage to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
         // Get a random stage
@@ -317,7 +307,7 @@ client.on('message', (message) =>
             let arg = message.content.substring(13);
             key = stageKeys.hasOwnProperty(arg) ? stageKeys[arg] : null;
         }
-        
+
         if(key == null)
         {
             message.reply('Invalid category. Options are: reg, regular, splat, splatfest, salmon, salmonrun, and station');
@@ -328,26 +318,26 @@ client.on('message', (message) =>
             stagesLibrary.getStages((err, data) =>
             {
                 let maps = data[key];
-                
+
                 let randomMap = maps[Math.floor(Math.random() * maps.length)];
                 message.reply('Your stage is **' + randomMap['name'] + '**');
             });
         }
     }
-    
-    if(message.content === '!randomweapon')
+
+    if(message.content === `${config.prefix}randomweapon`)
     {
         logger.info(`Sending random weapon to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
         weaponsLibrary.getWeapons((err, data) =>
         {
             let weapons = data['weapons']['weapons'];
-            
+
             let randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
             message.reply('Your weapon is the **' + randomWeapon.name + '**');
         });
     }
-    
-    if(message.content === '!togglemaps')
+
+    if(message.content === `${config.prefix}togglemaps`)
     {
         // Make sure that if this is a server, only allow the owner to modify this
         if(message.channel.type === 'text')
@@ -359,7 +349,7 @@ client.on('message', (message) =>
                 return;
             }
         }
-        
+
         if(db.get('mapChannels').value().indexOf(message.channel.id) === -1)
         {
             logger.info("Added map updates to " + message.channel.name + " (" + message.channel.id + ")");
@@ -374,29 +364,29 @@ client.on('message', (message) =>
         }
         logger.info(`{On ${message.guild.name} (${message.guild.id})}`);
     }
-    
-    if(message.content === '!help')
+
+    if(message.content === `${config.prefix}help`)
     {
         let msgData = [
             '**Command Usage:**',
             '',
-            '__!help__ - Show help',
+            `**${config.prefix}help** - Show help`,
             '',
-            '__!togglemaps__ - Toggle the automatic updates of maps in this channel',
+            `**${config.prefix}togglemaps** - Toggle the automatic updates of maps in this channel`,
             '',
-            '__!weapons__ - List all Splatoon 2 weapons',
+            `**${config.prefix}weapons** - List all Splatoon 2 weapons`,
             '',
-            '__!randomweapon__ - Get a random weapon',
+            `**${config.prefix}randomweapon** - Get a random weapon`,
             '',
-            '__!stages__ - List all Splatoon 2 stages',
+            `**${config.prefix}stages** - List all Splatoon 2 stages`,
             '',
-            '__!randomstage__ [category] - Gets a random stage from the specified category. Options are reg, regular, splat, splatfest, salmon, salmonrun, and station. Defaults to regular.'
+            `**${config.prefix}randomstage** [category] - Gets a random stage from the specified category. Options are reg, regular, splat, splatfest, salmon, salmonrun, and station. Defaults to regular.`
         ];
         message.channel.send(msgData.join("\n")).catch(logger.error);
     }
 });
 
-client.login(token).then(r => logger.info('Logged in successfully')).catch(e =>
+client.login(config.token).then(r => logger.info('Logged in successfully')).catch(e =>
 {
     logger.error('Error logging in');
     logger.error(e);
