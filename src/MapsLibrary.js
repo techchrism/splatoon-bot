@@ -16,12 +16,21 @@ class MapsLibrary extends events.EventEmitter
     {
         request.get('https://splatoon2.ink/data/schedules.json', (error, response, body) =>
         {
-            this.data = JSON.parse(body);
-            
-            let refreshAt = this.data['regular'][0]['end_time'] * 1000;
-            let refreshIn = refreshAt - Date.now();
-            this.refreshIn = refreshIn;
-            this.logger.info('Refreshing in ' + Math.ceil(refreshIn / 1000) + ' seconds!');
+            let refreshIn = 0;
+            try
+            {
+                this.data = JSON.parse(body);
+                
+                let refreshAt = this.data['regular'][0]['end_time'] * 1000;
+                refreshIn = refreshAt - Date.now();
+                this.refreshIn = refreshIn;
+                this.logger.info('Refreshing in ' + Math.ceil(refreshIn / 1000) + ' seconds!');
+            }
+            catch(e)
+            {
+                console.error('Error loading schedule data:');
+                console.error(e);
+            }
             
             if(refreshIn <= 0)
             {
