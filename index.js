@@ -281,16 +281,7 @@ client.on('message', (message) =>
             // Format the data by category (defined in scrapeData)
             for(let scrape of scrapeData)
             {
-                let stagesList = '';
-                for(let i = 0; i < data[scrape.key].length; i++)
-                {
-                    stagesList += data[scrape.key][i].name;
-                    if(i !== data[scrape.key].length - 1)
-                    {
-                        stagesList += ', ';
-                    }
-                }
-                stagesEmbed.addField(scrape.name, stagesList);
+                stagesEmbed.addField(scrape.name, data[scrape.key].map(stage => stage.name).join(', '));
             }
 
             message.channel.send(stagesEmbed).catch(logger.error);
