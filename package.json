@@ -12,12 +12,13 @@
   "dependencies": {
     "bufferutil": "^4.0.1",
     "discord.js": "^12.1.1",
+    "dotenv": "^8.2.0",
     "erlpack": "github:discordapp/erlpack",
     "lowdb": "^1.0.0",
     "node-fetch": "^2.6.0",
-    "request": "^2.88.2",
     "utf-8-validate": "^5.0.2",
     "winston": "^3.2.1",
-    "winston-daily-rotate-file": "^4.4.2"
+    "winston-daily-rotate-file": "^4.4.2",
+    "yargs": "^15.4.1"
   }
 }

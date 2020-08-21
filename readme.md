@@ -16,23 +16,32 @@ npm install
 # Run the app
 npm start
 ```
-Please note you'll need to create a `config.json` file to store your bot's unique token and your desired prefix. Create this file in the main directory, and add to it:
+
+## Configuration
+The configuration file will be created automatically
 ```json
 {
     "prefix": "!",
     "token": "discord bot token"
 }
 ```
-You can get your bot's token from discord's [developer page](https://discordapp.com/developers/applications).
-## Usage
+You can also use `.env` for the environment variables `TOKEN` and `PREFIX`or use the command line arguments `--token=` and `--prefix=`\
+If a command line option isn't provided, it will search the environment variables and if that doesn't exist, it will load the value from the config\
+Additionally, you can use the command line argument `--config=` to specify a custom config path
 
-**Commands:**
-- help - Shows the help message
-- togglemaps - Toggles whether to provide updates in the current channel when maps rotate
-- weapons - Lists all weapons currently in Splatoon 2
-- randomweapon - Get a random weapon
-- stages - Lists all stages currently in Splatoon 2, including splatfest stages
-- randomstage - Gets a random stage from any catagory (default is regular). Options are regular, splatfest, and salmon.
+You can get your bot's token from discord's [developer page](https://discordapp.com/developers/applications).
+
+## Usage
+These bot commands must start with the prefix you've configured
+
+Command | Description
+--- | ---
+help | Shows the help message
+togglemaps | Toggles whether to provide updates in the current channel when maps rotate
+weapons | Lists all weapons currently in Splatoon 2
+randomweapon | Get a random weapon
+stages | Lists all stages currently in Splatoon 2, including splatfest stages
+randomstage | Gets a random stage from any category (default is regular). Options are regular, splatfest, and salmon.
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
