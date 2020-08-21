@@ -1,6 +1,6 @@
 const vm = require('vm');
-const request = require('request');
 const fs = require('fs');
+const fetch = require('node-fetch');
 
 class StagesLibrary
 {
@@ -24,28 +24,25 @@ class StagesLibrary
         this.manuallyAdded = manualData === '' ? [] : JSON.parse(manualData)['custom'];
     }
     
-    forceUpdate(callback)
+    async forceUpdate()
     {
-        request.get('http://nkitten.net/splatoon2/res/script/stagesmodes.js', (error, response, body) =>
+        const data = await (await fetch('http://nkitten.net/splatoon2/res/script/stagesmodes.js')).text();
+        let sandbox = {};
+        vm.createContext(sandbox);
+        vm.runInContext(data, sandbox);
+        sandbox['stagesmodes']['stages_station'] = [];
+        for(let name of this.manuallyAdded)
         {
-            let sandbox = {};
-            vm.createContext(sandbox);
-            vm.runInContext(body, sandbox);
-            sandbox['stagesmodes']['stages_station'] = [];
-            for(let name of this.manuallyAdded)
-            {
-                sandbox['stagesmodes']['stages_station'].push({
-                    name: name
-                });
-            }
-            
-            this.db.set('stages', sandbox['stagesmodes']).write();
-            
-            callback(null, sandbox['stagesmodes']);
-        });
+            sandbox['stagesmodes']['stages_station'].push({
+                name: name
+            });
+        }
+        
+        this.db.set('stages', sandbox['stagesmodes']).write();
+        return sandbox['stagesmodes'];
     }
     
-    getStages(callback)
+    async getStages()
     {
         let now = new Date();
         
@@ -54,11 +51,11 @@ class StagesLibrary
         {
             this.logger.info('Reloading stages');
             this.lastUpdated = now;
-            this.forceUpdate(callback);
+            return (await this.forceUpdate());
         }
         else
         {
-            callback(null, this.db.get('stages').value());
+            return this.db.get('stages').value();
         }
     }
 }

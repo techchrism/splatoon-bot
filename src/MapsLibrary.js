@@ -1,5 +1,5 @@
 const events = require('events');
-const request = require('request');
+const fetch = require('node-fetch');
 
 class MapsLibrary extends events.EventEmitter
 {
@@ -12,44 +12,41 @@ class MapsLibrary extends events.EventEmitter
         this.refreshIn = 0;
     }
     
-    load()
+    async load()
     {
-        request.get('https://splatoon2.ink/data/schedules.json', (error, response, body) =>
+        let refreshIn = 0;
+        try
         {
-            let refreshIn = 0;
-            try
-            {
-                this.data = JSON.parse(body);
-                
-                let refreshAt = this.data['regular'][0]['end_time'] * 1000;
-                refreshIn = refreshAt - Date.now();
-                this.refreshIn = refreshIn;
-                this.logger.info(`Refreshing in ${Math.ceil(refreshIn / 1000)} seconds!`);
-            }
-            catch(e)
-            {
-                console.error('Error loading schedule data:');
-                console.error(e);
-            }
-            
-            if(refreshIn <= 0)
-            {
-                // If the data hasn't reloaded yet, wait 10 more seconds before retrying
-                setTimeout(() =>
-                {
-                    this.load();
-                }, 10000);
-            }
-            else
-            {
-                this.emit('data', this.data);
+            this.data = await (await fetch('https://splatoon2.ink/data/schedules.json')).json();
+            let refreshAt = this.data['regular'][0]['end_time'] * 1000;
+            refreshIn = refreshAt - Date.now();
+            this.refreshIn = refreshIn;
+            this.logger.info(`Refreshing in ${Math.ceil(refreshIn / 1000)} seconds!`);
+        }
+        catch(e)
+        {
+            console.error('Error loading schedule data:');
+            console.error(e);
+            return;
+        }
     
-                setTimeout(() =>
-                {
-                    this.load();
-                }, refreshIn + 15000); // Add 15 seconds for the api to catch up
-            }
-        });
+        if(refreshIn <= 0)
+        {
+            // If the data hasn't reloaded yet, wait 10 more seconds before retrying
+            setTimeout(() =>
+            {
+                this.load();
+            }, 10000);
+        }
+        else
+        {
+            this.emit('data', this.data);
+        
+            setTimeout(() =>
+            {
+                this.load();
+            }, refreshIn + 15000); // Add 15 seconds for the api to catch up
+        }
     }
     
     getRefreshInSimple()

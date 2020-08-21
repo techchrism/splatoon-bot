@@ -14,6 +14,7 @@
     "discord.js": "^12.1.1",
     "erlpack": "github:discordapp/erlpack",
     "lowdb": "^1.0.0",
+    "node-fetch": "^2.6.0",
     "request": "^2.88.2",
     "utf-8-validate": "^5.0.2",
     "winston": "^3.2.1",

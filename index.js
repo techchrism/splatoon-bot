@@ -1,4 +1,3 @@
-const fs = require('fs');
 const Discord = require('discord.js');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
@@ -7,7 +6,7 @@ const MapsLibrary = require('./src/MapsLibrary');
 const StagesLibrary = require('./src/StagesLibrary');
 const SalmonRunLibrary = require('./src/SalmonRunLibrary');
 const {createLogger, format, transports} = require('winston');
-const {combine, timestamp, label, prettyPrint, printf} = format;
+const {combine, timestamp, printf} = format;
 const config = require('./config.json');
 require('winston-daily-rotate-file');
 
@@ -228,64 +227,60 @@ client.on('ready', () =>
     salmonRunLibrary.load();
 });
 
-client.on('message', message =>
+client.on('message', async message =>
 {
     if(message.content === `${config.prefix}weapons`)
     {
         // Send a list of weapons
         logger.info(`Sending weapons to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
-        weaponsLibrary.getWeapons((err, data) =>
+        const weaponsData = await weaponsLibrary.getWeapons();
+        let page = 1;
+        for(let weapons of weaponsData.cachedWeaponsList)
         {
-            let page = 1;
-            for(let weapons of data.cachedWeaponsList)
-            {
-                let weaponsEmbed = new Discord.MessageEmbed()
-                .setColor(5504768)
-                 .setTitle(`All Splatoon 2 Weapons (Page ${page})`)
-                 .setDescription(weapons);
-                message.channel.send(weaponsEmbed).catch(logger.error);
-                page++;
-            }
-        });
+            let weaponsEmbed = new Discord.MessageEmbed()
+            .setColor(5504768)
+             .setTitle(`All Splatoon 2 Weapons (Page ${page})`)
+             .setDescription(weapons);
+            message.channel.send(weaponsEmbed).catch(logger.error);
+            page++;
+        }
     }
 
     if(message.content === `${config.prefix}stages`)
     {
         // Send a list of stages
         logger.info(`Sending stages to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
-        stagesLibrary.getStages((err, data) =>
-        {
-            let stagesEmbed = new Discord.MessageEmbed()
-                .setTitle('All Splatoon 2 Stages:')
-                .setColor(5504768);
+        const stages = await stagesLibrary.getStages();
+        let stagesEmbed = new Discord.MessageEmbed()
+            .setTitle('All Splatoon 2 Stages:')
+            .setColor(5504768);
 
-            let scrapeData = [
-                {
-                    name: 'Regular Stages',
-                    key: 'stages'
-                },
-                {
-                    name: 'Salmon Run Stages',
-                    key: 'stages_salmonrun'
-                },
-                {
-                    name: 'Splatfest Stages',
-                    key: 'stages_splatfest'
-                },
-                {
-                    name: 'Station Stages',
-                    key: 'stages_station'
-                }
-            ];
-
-            // Format the data by category (defined in scrapeData)
-            for(let scrape of scrapeData)
+        let scrapeData = [
             {
-                stagesEmbed.addField(scrape.name, data[scrape.key].map(stage => stage.name).join(', '));
+                name: 'Regular Stages',
+                key: 'stages'
+            },
+            {
+                name: 'Salmon Run Stages',
+                key: 'stages_salmonrun'
+            },
+            {
+                name: 'Splatfest Stages',
+                key: 'stages_splatfest'
+            },
+            {
+                name: 'Station Stages',
+                key: 'stages_station'
             }
+        ];
 
-            message.channel.send(stagesEmbed).catch(logger.error);
-        });
+        // Format the data by category (defined in scrapeData)
+        for(let scrape of scrapeData)
+        {
+            stagesEmbed.addField(scrape.name, stages[scrape.key].map(stage => stage.name).join(', '));
+        }
+
+        message.channel.send(stagesEmbed).catch(logger.error);
     }
 
     if(message.content.startsWith(`${config.prefix}randomstage`))
@@ -319,13 +314,9 @@ client.on('message', message =>
     if(message.content === `${config.prefix}randomweapon`)
     {
         logger.info(`Sending random weapon to ${message.member.user.username} in ${message.guild.name} - ${message.channel.name}`);
-        weaponsLibrary.getWeapons((err, data) =>
-        {
-            let weapons = data['weapons']['weapons'];
-
-            let randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
-            message.reply(`Your weapon is the **${randomWeapon.name}**`);
-        });
+        const weapons = (await weaponsLibrary.getWeapons())['weapons']['weapons'];
+        let randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
+        message.reply(`Your weapon is the **${randomWeapon.name}**`);
     }
 
     if(message.content === `${config.prefix}togglemaps`)

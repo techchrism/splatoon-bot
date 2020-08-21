@@ -1,5 +1,5 @@
 const vm = require('vm');
-const request = require('request');
+const fetch = require('node-fetch');
 
 class WeaponsLibrary
 {
@@ -14,41 +14,39 @@ class WeaponsLibrary
         this.cachedWeaponsList = [];
     }
     
-    forceUpdate(callback)
+    async forceUpdate()
     {
-        request.get('https://nkitten.net/splatoon2/res/script/weaponlist.js', (error, response, body) =>
-        {
-            let sandbox = {};
-            vm.createContext(sandbox);
-            vm.runInContext(body, sandbox);
-            
-            this.db.set('weapons', sandbox['weaponlist']).write();
+        const data = await (await fetch('https://nkitten.net/splatoon2/res/script/weaponlist.js')).text();
+        let sandbox = {};
+        vm.createContext(sandbox);
+        vm.runInContext(data, sandbox);
     
-            let weaponsList = '';
-            this.cachedWeaponsList = [];
-            for(let i = 0; i < sandbox['weaponlist']['weapons'].length; i++)
+        this.db.set('weapons', sandbox['weaponlist']).write();
+    
+        let weaponsList = '';
+        this.cachedWeaponsList = [];
+        for(let i = 0; i < sandbox['weaponlist']['weapons'].length; i++)
+        {
+            if(weaponsList.length > 1024)
             {
-                if(weaponsList.length > 1024)
-                {
-                    this.cachedWeaponsList.push(weaponsList);
-                    weaponsList = '';
-                }
-                weaponsList += sandbox['weaponlist']['weapons'][i].name;
-                if(i !== sandbox['weaponlist']['weapons'].length - 1)
-                {
-                    weaponsList += ', ';
-                }
+                this.cachedWeaponsList.push(weaponsList);
+                weaponsList = '';
             }
-            this.cachedWeaponsList.push(weaponsList);
-            
-            callback(null, {
-                weapons: sandbox['weaponlist'],
-                cachedWeaponsList: this.cachedWeaponsList
-            });
-        });
+            weaponsList += sandbox['weaponlist']['weapons'][i].name;
+            if(i !== sandbox['weaponlist']['weapons'].length - 1)
+            {
+                weaponsList += ', ';
+            }
+        }
+        this.cachedWeaponsList.push(weaponsList);
+    
+        return {
+            weapons: sandbox['weaponlist'],
+            cachedWeaponsList: this.cachedWeaponsList
+        };
     }
     
-    getWeapons(callback)
+    async getWeapons()
     {
         let now = new Date();
         
@@ -57,42 +55,33 @@ class WeaponsLibrary
         {
             this.logger.info('Reloading weapons');
             this.lastUpdated = now;
-            this.forceUpdate(callback);
+            return (await this.forceUpdate());
         }
         else
         {
-            callback(null, {
+            return {
                 weapons: this.db.get('weapons').value(),
                 cachedWeaponsList: this.cachedWeaponsList
-            });
+            };
         }
     }
     
-    getWeaponsSorted(callback)
+    async getWeaponsSorted()
     {
-        this.getWeapons((err, data) =>
+        const data = await this.getWeapons();
+        data['weapons'].sort((a, b) =>
         {
-            if(err)
+            if(a.name < b.name)
             {
-                callback(err);
-                return;
+                return -1;
             }
-            
-            data['weapons'].sort((a, b) =>
+            if(a.name > b.name)
             {
-                if(a.name < b.name)
-                {
-                    return -1;
-                }
-                if(a.name > b.name)
-                {
-                    return 1;
-                }
-                return 0;
-            });
-            
-            callback(null, data);
-        })
+                return 1;
+            }
+            return 0;
+        });
+        return data;
     }
 }
 

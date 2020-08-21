@@ -1,5 +1,5 @@
 const events = require('events');
-const request = require('request');
+const fetch = require('node-fetch');
 
 class SalmonRunLibrary extends events.EventEmitter
 {
@@ -12,35 +12,41 @@ class SalmonRunLibrary extends events.EventEmitter
         this.refreshIn = 0;
     }
     
-    load()
+    async load()
     {
-        request.get('https://splatoon2.ink/data/coop-schedules.json', (error, response, body) =>
+        let refreshIn = 0;
+        try
         {
-            this.data = JSON.parse(body);
-            
+            this.data = await (await fetch('https://splatoon2.ink/data/coop-schedules.json')).json();
             let refreshAt = this.data['details'][1]['start_time'] * 1000;
             let refreshIn = refreshAt - Date.now();
             this.refreshIn = refreshIn;
             this.logger.info(`Refreshing salmon run in ${Math.ceil(refreshIn / 1000)} seconds`);
-            
-            if(refreshIn <= 0)
+        }
+        catch(e)
+        {
+            console.error('Error loading schedule data:');
+            console.error(e);
+            return;
+        }
+    
+        if(refreshIn <= 0)
+        {
+            // If the data hasn't reloaded yet, wait 10 more seconds before retrying
+            setTimeout(() =>
             {
-                // If the data hasn't reloaded yet, wait 10 more seconds before retrying
-                setTimeout(() =>
-                {
-                    this.load();
-                }, 10000);
-            }
-            else
+                this.load();
+            }, 10000);
+        }
+        else
+        {
+            this.emit('data', this.data);
+        
+            setTimeout(() =>
             {
-                this.emit('data', this.data);
-                
-                setTimeout(() =>
-                {
-                    this.load();
-                }, refreshIn + 15000); // Add 15 seconds for the api to catch up
-            }
-        });
+                this.load();
+            }, refreshIn + 15000); // Add 15 seconds for the api to catch up
+        }
     }
     
     getFormattedTime(ms)
