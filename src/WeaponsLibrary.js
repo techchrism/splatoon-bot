@@ -55,7 +55,7 @@ class WeaponsLibrary
         // Reload weapons if it's been more than a day
         if(this.lastUpdated === null || (this.lastUpdated - now) >= 1000 * 60 * 60 * 24)
         {
-            this.logger.info("Reloading weapons");
+            this.logger.info('Reloading weapons');
             this.lastUpdated = now;
             this.forceUpdate(callback);
         }

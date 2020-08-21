@@ -21,7 +21,7 @@ class SalmonRunLibrary extends events.EventEmitter
             let refreshAt = this.data['details'][1]['start_time'] * 1000;
             let refreshIn = refreshAt - Date.now();
             this.refreshIn = refreshIn;
-            this.logger.info('Refreshing salmon run in ' + Math.ceil(refreshIn / 1000) + ' seconds');
+            this.logger.info(`Refreshing salmon run in ${Math.ceil(refreshIn / 1000)} seconds`);
             
             if(refreshIn <= 0)
             {

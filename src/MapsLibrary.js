@@ -24,7 +24,7 @@ class MapsLibrary extends events.EventEmitter
                 let refreshAt = this.data['regular'][0]['end_time'] * 1000;
                 refreshIn = refreshAt - Date.now();
                 this.refreshIn = refreshIn;
-                this.logger.info('Refreshing in ' + Math.ceil(refreshIn / 1000) + ' seconds!');
+                this.logger.info(`Refreshing in ${Math.ceil(refreshIn / 1000)} seconds!`);
             }
             catch(e)
             {

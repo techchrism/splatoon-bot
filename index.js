@@ -8,7 +8,7 @@ const StagesLibrary = require('./src/StagesLibrary');
 const SalmonRunLibrary = require('./src/SalmonRunLibrary');
 const {createLogger, format, transports} = require('winston');
 const {combine, timestamp, label, prettyPrint, printf} = format;
-const config = require("./config.json");
+const config = require('./config.json');
 require('winston-daily-rotate-file');
 
 // Begin logging
@@ -32,7 +32,7 @@ const logger = createLogger({
     ]
 });
 
-logger.info("Started logging");
+logger.info('Started logging');
 
 const adapter = new FileSync('db.json');
 const db = low(adapter);
@@ -95,7 +95,7 @@ function weaponsToString(weapons)
         }
         else
         {
-            logger.warn('Unknown weapon data: ' + JSON.stringify(value));
+            logger.warn(`Unknown weapon data: ${JSON.stringify(value)}`);
             return 'Unknown';
         }
     }).join(', ');
@@ -103,7 +103,7 @@ function weaponsToString(weapons)
 
 function sendSalmonRunData(data)
 {
-    logger.info("Sending salmon run data");
+    logger.info('Sending salmon run data');
 
     let now = data['details'][0];
     const future = data['details'][1];
@@ -122,7 +122,7 @@ function sendSalmonRunData(data)
 
 function sendMapData(data)
 {
-    logger.info("Sending map data");
+    logger.info('Sending map data');
     let send = [];
 
     // Define the data we want to display
@@ -210,17 +210,17 @@ db.defaults({
 // Calls when logged into discord
 client.on('ready', () =>
 {
-    logger.info('Logged in as "' + client.user.tag + '"');
+    logger.info(`Logged in as "${client.user.tag}"`);
 
     // Start the timer to send the messages
-    mapsLibrary.on('data', (data) =>
+    mapsLibrary.on('data', data =>
     {
         logger.info('Got map data');
         sendMapData(data);
     });
     mapsLibrary.load();
 
-    salmonRunLibrary.on('data', (data) =>
+    salmonRunLibrary.on('data', data =>
     {
         logger.info('Got salmon run data');
         sendSalmonRunData(data);
@@ -228,7 +228,7 @@ client.on('ready', () =>
     salmonRunLibrary.load();
 });
 
-client.on('message', (message) =>
+client.on('message', message =>
 {
     if(message.content === `${config.prefix}weapons`)
     {
@@ -241,7 +241,7 @@ client.on('message', (message) =>
             {
                 let weaponsEmbed = new Discord.MessageEmbed()
                 .setColor(5504768)
-                 .setTitle('All Splatoon 2 Weapons (Page ' + page + ")")
+                 .setTitle(`All Splatoon 2 Weapons (Page ${page})`)
                  .setDescription(weapons);
                 message.channel.send(weaponsEmbed).catch(logger.error);
                 page++;
@@ -311,7 +311,7 @@ client.on('message', (message) =>
                 let maps = data[key];
 
                 let randomMap = maps[Math.floor(Math.random() * maps.length)];
-                message.reply('Your stage is **' + randomMap['name'] + '**');
+                message.reply(`Your stage is **${randomMap['name']}**`);
             });
         }
     }
@@ -324,7 +324,7 @@ client.on('message', (message) =>
             let weapons = data['weapons']['weapons'];
 
             let randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
-            message.reply('Your weapon is the **' + randomWeapon.name + '**');
+            message.reply(`Your weapon is the **${randomWeapon.name}**`);
         });
     }
 
@@ -343,13 +343,13 @@ client.on('message', (message) =>
 
         if(db.get('mapChannels').value().indexOf(message.channel.id) === -1)
         {
-            logger.info("Added map updates to " + message.channel.name + " (" + message.channel.id + ")");
+            logger.info(`Added map updates to ${message.channel.name} (${message.channel.id})`);
             db.get('mapChannels').push(message.channel.id).write();
             message.reply('Added map updates to this channel!');
         }
         else
         {
-            logger.info("Removed map updates from " + message.channel.name + " (" + message.channel.id + ")");
+            logger.info(`Removed map updates from ${message.channel.name} (${message.channel.id})`);
             db.get('mapChannels').pull(message.channel.id).write();
             message.reply('Removed map updates to this channel!');
         }
